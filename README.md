@@ -1,8 +1,6 @@
 # DHT API
 
-A JSON API wrapper for btdigg to fetch torrent info from info hashes. This uses Tor network and requires a socks5 proxy (included in the docker-compose.yaml)
-
-
+A JSON API wrapper to fetch **metadata** about torrents from info hashes. This application uses **Tor network** and requires a socks5 proxy (included in the docker-compose.yaml)
 
 ## How to Use
 
@@ -41,3 +39,8 @@ content-type: application/json
 
 ```
 
+---
+
+### Disclaimer
+
+:warning: *This application only fetches metadata about info hashes and does not interact with any torrent protocols. However, it may still be illegal in your region. I am not responsible if you run this application in a country where it might be illegal or for what you do with the content.*  :warning:
