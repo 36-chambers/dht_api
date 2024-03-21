@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
+from os import environ
 from typing import Annotated
 
 import structlog
@@ -8,6 +9,8 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException, Query
 from dht_api import btdigg, db, schemas
 
 log = structlog.get_logger(__name__)
+
+STALE_TORRENT_DAYS = int(environ.get("STALE_TORRENT_DAYS") or "7")
 
 
 @asynccontextmanager
@@ -45,7 +48,7 @@ async def info(
     if torrent_info:
         diff = datetime.utcnow() - torrent_info.updated_at
         log.info("diff", diff=diff.total_seconds())
-        if diff.total_seconds() > timedelta(days=7).total_seconds():
+        if diff.total_seconds() > timedelta(days=STALE_TORRENT_DAYS).total_seconds():
             log.info("torrent_info is stale, refreshing")
             background_tasks.add_task(refresh_torrent_info, info_hash)
         return torrent_info
