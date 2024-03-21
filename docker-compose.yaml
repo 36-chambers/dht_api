@@ -5,11 +5,14 @@ services:
   dht_api:
     build: ./
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     links:
       - torproxy
     environment:
       - SOCKS_PROXY_URL=socks5://torproxy:9050
+      - DB_FILE=/data/db.sqlite
+    volumes:
+      - ./data/dht_api:/data
 
   torproxy:
     image: dperson/torproxy
@@ -17,13 +20,15 @@ services:
     environment:
       - TORUSER=root
 
-  tunnel:
-    container_name: cloudflared-tunnel
-    image: cloudflare/cloudflared
-    restart: unless-stopped
-    depends_on:
-      - dht_api
-    links:
-      - dht_api
-    command: tunnel --no-autoupdate run --proxy-address dht_api --proxy-port 8000
-    env_file: .env
+  ## XXX Uncomment this and create TUNNEL_TOKEN=<token> in .env file to enable
+  ## Cloudflare tunnel
+  # tunnel:
+  #   container_name: cloudflared-tunnel
+  #   image: cloudflare/cloudflared
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - dht_api
+  #   links:
+  #     - dht_api
+  #   command: tunnel --no-autoupdate run --proxy-address dht_api --proxy-port 8000
+  #   env_file: .env

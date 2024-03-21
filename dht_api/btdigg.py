@@ -1,22 +1,12 @@
-from lxml import html
 from os import environ
-from pydantic import BaseModel
+
 import aiohttp
 from aiohttp_socks import ProxyConnector
+from lxml import html
+
+from dht_api.schemas import Torrent, TorrentFile
 
 SOCKS_PROXY_URL = environ.get("SOCKS_PROXY_URL") or "socks5://127.0.0.1:9050"
-
-
-class TorrentFile(BaseModel):
-    filename: str
-    size: int
-
-
-class Torrent(BaseModel):
-    name: str
-    size: int
-    age: str
-    files: list[TorrentFile]
 
 
 async def get_torrent_info(info_hash: str) -> Torrent | None:
@@ -31,6 +21,7 @@ async def get_torrent_info(info_hash: str) -> Torrent | None:
     torrent_files = get_files(tree)
 
     return Torrent(
+        info_hash=info_hash,
         name=torrent_name[0].text_content(),
         size=convert_to_bytes(torrent_size[0].text_content()),
         age=torrent_age[0].text_content(),
@@ -46,15 +37,13 @@ def get_files(doc: html.HtmlElement) -> list[TorrentFile]:
     for file_element in file_elements:
         filename = file_element.text.strip()
         size = file_element.xpath("following-sibling::span[1]/text()")[0].strip()
-        files.append(TorrentFile(filename=filename, size=convert_to_bytes(size)))
+        files.append(TorrentFile(name=filename, size=convert_to_bytes(size)))
 
     return files
 
 
 async def get_html(info_hash: str) -> str | None:
-    url: str = (
-        "http://btdigggink2pdqzqrik3blmqemsbntpzwxottujilcdjfz56jumzfsyd.onion/search"
-    )
+    url: str = "http://btdigggink2pdqzqrik3blmqemsbntpzwxottujilcdjfz56jumzfsyd.onion/search"
     params: dict = {"order": 0, "q": info_hash}
     headers: dict = {
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0"
@@ -85,6 +74,6 @@ def convert_to_bytes(size_str: str) -> int:
 
     if unit == "MB":
         return int(num * 1024**2)
-    elif unit == "GB":
+    if unit == "GB":
         return int(num * 1024**3)
     return 0
