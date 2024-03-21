@@ -16,6 +16,7 @@ aiohttp = "^3.9.3"
 structlog = "^24.1.0"
 aiosqlite = "^0.20.0"
 sqlalchemy = {extras = ["sqlite"], version = "^2.0.28"}
+aioboto3 = "^12.3.0"
 
 
 [tool.poetry.group.dev.dependencies]
