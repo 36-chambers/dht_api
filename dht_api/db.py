@@ -1,9 +1,10 @@
 from os import environ
 
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 Base = declarative_base()
 
@@ -26,6 +27,8 @@ class Torrent(Base):
     size = Column(Integer, nullable=False)
     age = Column(String, nullable=False)
     files = relationship("TorrentFile", backref="torrent", lazy="joined")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
 async def add_torrent(torrent: Torrent) -> None:
