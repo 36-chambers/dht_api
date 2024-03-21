@@ -27,4 +27,4 @@ jobs:
         with:
           context: ./
           push: true
-          tags: ghcr.io/RohirrimRider/dht_api:latest
+          tags: ghcr.io/rohirrimrider/dht_api:latest
