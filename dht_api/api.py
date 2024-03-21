@@ -48,9 +48,10 @@ async def info(
     background_tasks: BackgroundTasks,
     info_hash: Annotated[
         str,
-        Query(description="Torrent Info Hash", min_length=40, max_length=40, transform=str.upper),
+        Query(description="Torrent Info Hash", min_length=40, max_length=40),
     ],
 ) -> Torrent:
+    info_hash = info_hash.upper()
     obj = await s3.read(info_hash, Torrent)
     if obj:
         background_tasks.add_task(refresh_torrent, obj, info_hash)
