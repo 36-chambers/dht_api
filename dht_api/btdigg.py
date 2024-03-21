@@ -1,6 +1,10 @@
-import requests
 from lxml import html
+from os import environ
 from pydantic import BaseModel
+import aiohttp
+from aiohttp_socks import ProxyConnector
+
+SOCKS_PROXY_URL = environ.get("SOCKS_PROXY_URL") or "socks5://127.0.0.1:9050"
 
 
 class TorrentFile(BaseModel):
@@ -15,8 +19,11 @@ class Torrent(BaseModel):
     files: list[TorrentFile]
 
 
-async def get_torrent_info(info_hash: str):
-    tree = html.fromstring(get_html(info_hash))
+async def get_torrent_info(info_hash: str) -> Torrent | None:
+    html_text = await get_html(info_hash)
+    if html_text is None:
+        return None
+    tree = html.fromstring(html_text)
 
     torrent_name = tree.xpath("//td[text()='Name:']/following-sibling::td[1]")
     torrent_size = tree.xpath("//td[text()='Size:']/following-sibling::td[1]")
@@ -32,10 +39,8 @@ async def get_torrent_info(info_hash: str):
 
 
 def get_files(doc: html.HtmlElement) -> list[TorrentFile]:
-    # Find all file elements
     file_elements = doc.xpath('//div[contains(@class, "fa fa-file-video-o")]')
 
-    # Initialize an empty dictionary to store your filename: size pairs
     files: list[TorrentFile] = []
 
     for file_element in file_elements:
@@ -46,8 +51,7 @@ def get_files(doc: html.HtmlElement) -> list[TorrentFile]:
     return files
 
 
-def get_html(info_hash: str) -> str:
-    # Ensure proper type assertions
+async def get_html(info_hash: str) -> str | None:
     url: str = (
         "http://btdigggink2pdqzqrik3blmqemsbntpzwxottujilcdjfz56jumzfsyd.onion/search"
     )
@@ -56,13 +60,14 @@ def get_html(info_hash: str) -> str:
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0"
     }
 
-    # Use Tor's SOCKS proxy
-    proxies: dict = {
-        "http": "socks5h://localhost:9050",
-        "https": "socks5h://localhost:9050",
-    }
+    connector: ProxyConnector = ProxyConnector.from_url(SOCKS_PROXY_URL)
 
-    return requests.get(url, params=params, headers=headers, proxies=proxies).text
+    async with aiohttp.ClientSession(connector=connector) as session, session.get(
+        url, params=params, headers=headers
+    ) as response:
+        if response.status == 404:
+            return None
+        return await response.text()
 
 
 def convert_to_bytes(size_str: str) -> int:

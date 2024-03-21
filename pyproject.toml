@@ -14,6 +14,7 @@ fastapi = "^0.110.0"
 uvicorn = "^0.29.0"
 aiohttp-socks = "^0.8.4"
 aiohttp = "^3.9.3"
+structlog = "^24.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
