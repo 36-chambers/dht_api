@@ -1,10 +1,11 @@
+import math
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from os import environ
 from typing import Annotated
 
 import structlog
-from fastapi import BackgroundTasks, FastAPI, HTTPException, Query
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Response
 
 from dht_api import btdigg, db, schemas
 
@@ -41,6 +42,7 @@ async def refresh_torrent_info(info_hash: str) -> None:
 
 @app.get("/info")
 async def info(
+    response: Response,
     background_tasks: BackgroundTasks,
     info_hash: Annotated[str, Query(description="Torrent Info Hash", min_length=40, max_length=40)],
 ) -> schemas.Torrent:
@@ -51,6 +53,10 @@ async def info(
         if diff.total_seconds() > timedelta(days=STALE_TORRENT_DAYS).total_seconds():
             log.info("torrent_info is stale, refreshing")
             background_tasks.add_task(refresh_torrent_info, info_hash)
+        expiration_seconds = math.ceil(
+            max(0, timedelta(days=STALE_TORRENT_DAYS).total_seconds() - diff.total_seconds())
+        )
+        response.headers["Cache-Control"] = f"max-age={expiration_seconds}"
         return torrent_info
 
     torrent_info = await btdigg.get_torrent_info(info_hash)
@@ -66,5 +72,6 @@ async def info(
                 ],
             )
         )
+        response.headers["Cache-Control"] = f"max-age={STALE_TORRENT_DAYS * 86400}"
         return torrent_info
     raise HTTPException(status_code=404, detail="Not Found")
