@@ -16,3 +16,14 @@ services:
     restart: unless-stopped
     environment:
       - TORUSER=root
+
+  tunnel:
+    container_name: cloudflared-tunnel
+    image: cloudflare/cloudflared
+    restart: unless-stopped
+    depends_on:
+      - dht_api
+    links:
+      - dht_api
+    command: tunnel --no-autoupdate run --proxy-address dht_api --proxy-port 8000
+    env_file: .env

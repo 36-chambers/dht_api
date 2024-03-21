@@ -7,7 +7,6 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-requests = {extras = ["socks"], version = "^2.31.0"}
 lxml = "^5.1.0"
 pydantic = "^2.6.4"
 fastapi = "^0.110.0"
