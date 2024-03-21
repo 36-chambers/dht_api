@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "dht-api"
+version = "0.1.0"
+description = "A JSON api for discovering information about torrent info hashes over Tor"
+authors = ["Brett <160749165+RohirrimRider@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = {extras = ["socks"], version = "^2.31.0"}
+lxml = "^5.1.0"
+pydantic = "^2.6.4"
+fastapi = "^0.110.0"
+uvicorn = "^0.29.0"
+aiohttp-socks = "^0.8.4"
+aiohttp = "^3.9.3"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.3.3"
+pyright = "^1.1.355"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
