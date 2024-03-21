@@ -1,11 +1,15 @@
+from datetime import datetime, timezone
 from os import environ
 
+import structlog
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.future import select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
+log = structlog.get_logger(__name__)
 Base = declarative_base()
 
 DB_FILE = environ.get("DB_FILE") or "torrents.db"
@@ -32,20 +36,18 @@ class Torrent(Base):
 
 
 async def add_torrent(torrent: Torrent) -> None:
-    async with AsyncSession(engine, autoflush=True) as session:
-        session.add(
-            Torrent(
-                info_hash=torrent.info_hash,
-                name=torrent.name,
-                size=torrent.size,
-                age=torrent.age,
-                files=[
-                    TorrentFile(name=file.name, size=file.size, info_hash=torrent.info_hash)
-                    for file in torrent.files
-                ],
-            )
+    async with AsyncSession(engine, autoflush=True) as session, session.begin():
+        existing_result = await session.execute(
+            select(Torrent).filter(Torrent.info_hash == torrent.info_hash)
         )
-        await session.commit()
+        if existing := existing_result.scalar():
+            log.info("updating existing torrent", info_hash=torrent.info_hash)
+            existing.age = torrent.age
+            existing.updated_at = datetime.now(timezone.utc)  # type: ignore
+            return
+
+        log.info("adding new", info_hash=torrent.info_hash)
+        session.add(torrent)
 
 
 async def get_torrent(info_hash: str) -> Torrent | None:

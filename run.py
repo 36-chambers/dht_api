@@ -1,7 +1,8 @@
 # this file runs the fastapi under dht_api/app.py with uvicorn
 
-import uvicorn
 from os import environ
+
+import uvicorn
 
 WORKERS = int(environ.get("WORKERS") or "2")
 PORT = int(environ.get("PORT") or "8000")

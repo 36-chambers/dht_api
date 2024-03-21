@@ -1,17 +1,23 @@
+import asyncio
 from os import environ
 
 import aiohttp
+import structlog
 from aiohttp_socks import ProxyConnector
 from lxml import html
 
 from dht_api.schemas import Torrent, TorrentFile
 
+log = structlog.get_logger(__name__)
+
 SOCKS_PROXY_URL = environ.get("SOCKS_PROXY_URL") or "socks5://127.0.0.1:9050"
 
 
 async def get_torrent_info(info_hash: str) -> Torrent | None:
+    log.info("get_torrent_info", info_hash=info_hash)
     html_text = await get_html(info_hash)
     if html_text is None:
+        log.info("torrent not found", info_hash=info_hash)
         return None
     tree = html.fromstring(html_text)
 
@@ -51,12 +57,22 @@ async def get_html(info_hash: str) -> str | None:
 
     connector: ProxyConnector = ProxyConnector.from_url(SOCKS_PROXY_URL)
 
-    async with aiohttp.ClientSession(connector=connector) as session, session.get(
-        url, params=params, headers=headers
-    ) as response:
-        if response.status == 404:
-            return None
-        return await response.text()
+    retries = 3
+    for attempt in range(retries):
+        try:
+            async with aiohttp.ClientSession(connector=connector) as session, session.get(
+                url, params=params, headers=headers
+            ) as response:
+                if response.status == 404:
+                    return None
+                return await response.text()
+        except (aiohttp.ServerDisconnectedError, aiohttp.ClientError) as e:
+            log.error("error getting html", attempt=attempt, exc_info=e)
+            if attempt < retries - 1:
+                await asyncio.sleep(1 * attempt)
+
+    log.error("failed to get html", info_hash=info_hash)
+    return None
 
 
 def convert_to_bytes(size_str: str) -> int:
