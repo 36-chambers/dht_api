@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 
 
 class TorrentFile(BaseModel):
@@ -11,4 +11,11 @@ class Torrent(BaseModel):
     name: str
     size: int
     age: str
-    files: list[TorrentFile]
+    video_files: list[TorrentFile]
+
+    @root_validator(pre=True)
+    @classmethod
+    def rename_files(cls, values):
+        if "files" in values:
+            values["video_files"] = values.pop("files")
+        return values

@@ -11,7 +11,7 @@ log = structlog.get_logger(__name__)
 T = TypeVar("T", bound=BaseModel)
 
 
-class S3Object(Generic[T], BaseModel):
+class S3Object(BaseModel, Generic[T]):
     last_modified: datetime
     item: T
 
