@@ -1,6 +1,11 @@
 # DHT API
 
-A JSON API wrapper to fetch **metadata** about torrents from info hashes. This application uses **Tor network** and requires a socks5 proxy (included in the docker-compose.yaml)
+A JSON API wrapper to fetch video file **metadata** about torrents from info hashes. This application uses **Tor network** and requires a socks5 proxy (included in the docker-compose.yaml)
+
+### Requirements (all included in docker-compose.yaml)
+
+1. s3 compatible bucket to store data
+2. socks5 proxy for Tor
 
 ## How to Use
 
@@ -8,6 +13,7 @@ A JSON API wrapper to fetch **metadata** about torrents from info hashes. This a
 $ docker compose up -d
  ✔ Container dht_api-torproxy-1  Started
  ✔ Container dht_api-dht_api-1   Started
+ ✔ Container dht_api-minio-1     Started
  
 $ curl -D /dev/stderr -SLs 'http://127.0.0.1:8000/info?info_hash=f1d0336509ec07fb7801ca56cbbb7b5d000f8f10' | jq .
 
@@ -21,7 +27,7 @@ content-type: application/json
   "name": "The Lord of the Rings - The Extended Trilogy [HDR 2160p NVEnc 10Bit HVEC][Dolby TrueHD-Atmos 7.1Ch][BDRip][Multi Sub]",
   "size": 69943542415,
   "age": "1 year",
-  "files": [
+  "video_files": [
     {
       "filename": "[1] The Lord of the Rings - The Fellowship of the Ring (2001) - Extended Edition.mkv",
       "size": 21882858373
